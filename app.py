@@ -5,7 +5,7 @@ import joblib
 import streamlit as st
 
 # === 2. Load Model dan Fitur ===
-model, fitur_model = joblib.load("model_petir_xgb.pkl")
+model, fitur_model = joblib.load("model_petir_xgb (1).pkl")
 
 # === 3. Streamlit Interface ===
 st.set_page_config(page_title="Prediksi Petir", layout="centered")
