@@ -4,18 +4,15 @@ import numpy as np
 import joblib
 import streamlit as st
 
-# === 2. Load Model yang Sudah Dilatih ===
-model = joblib.load("model_petir_xgb.pkl")
+# === 2. Load Model dan Fitur ===
+model, fitur_model = joblib.load("model_petir_xgb.pkl")
 
-# === 3. Daftar fitur sesuai pelatihan ===
-fitur_model = ['hour', 'season', 'KI', 'SWEAT', 'LI', 'CAPE', 'TTI', 'SI', 'PW', 'cos_month']
-
-# === 4. Aplikasi Streamlit ===
+# === 3. Streamlit Interface ===
 st.set_page_config(page_title="Prediksi Petir", layout="centered")
 st.title("🌩️ Prediksi Kejadian Petir Harian")
-st.markdown("Silakan masukkan nilai-nilai parameter atmosfer di bawah ini.")
+st.markdown("Silakan masukkan nilai-nilai parameter atmosfer di bawah ini:")
 
-# Input dari user
+# === 4. Form Input User ===
 with st.form("form_input"):
     col1, col2 = st.columns(2)
     with col1:
@@ -33,11 +30,11 @@ with st.form("form_input"):
 
     submitted = st.form_submit_button("🔍 Prediksi")
 
-# === 5. Prediksi ===
+# === 5. Prediksi Probabilitas & Klasifikasi ===
 if submitted:
     cos_month = np.cos(2 * np.pi * month / 12)
 
-    # DataFrame sesuai urutan fitur pelatihan
+    # Buat DataFrame input user sesuai urutan fitur saat training
     X_input = pd.DataFrame([{
         'hour': hour,
         'season': season,
@@ -49,10 +46,10 @@ if submitted:
         'SI': SI,
         'PW': PW,
         'cos_month': cos_month
-    }])[fitur_model]  # pastikan urut dan konsisten
+    }])[fitur_model]  # pastikan urutannya sesuai
 
     prob = model.predict_proba(X_input)[0, 1]
     klasifikasi = "⚡ Petir" if prob >= 0.35 else "✅ Non-Petir"
 
     st.metric("Probabilitas Petir", f"{prob:.2f}")
-    st.success(f"Klasifikasi: {klasifikasi}")
+    st.success(f"Hasil Klasifikasi: {klasifikasi}")
