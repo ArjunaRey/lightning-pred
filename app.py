@@ -5,7 +5,7 @@ import joblib
 import streamlit as st
 
 # === 2. Load Model dan Fitur ===
-model, fitur_model = joblib.load("model_petir_xgb (1).pkl")
+model, fitur_model = joblib.load("model_petir_xgb_fix.pkl")
 
 # === 3. Streamlit Interface ===
 st.set_page_config(page_title="Prediksi Petir", layout="centered")
@@ -16,7 +16,7 @@ st.markdown("Silakan masukkan nilai-nilai parameter atmosfer di bawah ini:")
 with st.form("form_input"):
     col1, col2 = st.columns(2)
     with col1:
-        hour = st.selectbox("Jam (UTC)", options=[0, 12])
+        hour = st.selectbox("Jam (UTC)", options=[00, 12])
         season = st.selectbox("Periode Musim (1=DJF, 2=MAM, 3=JJA, 4=SON)", options=[1, 2, 3, 4])
         month = st.slider("Bulan", 1, 12, 1)
         KI = st.number_input("KI Index", value=30.0)
