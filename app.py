@@ -1,64 +1,23 @@
+# === 1. Import Library ===
 import pandas as pd
 import numpy as np
 import joblib
 import streamlit as st
 
-st.set_page_config(page_title="STMKG Lightning Prediction", layout="centered")
+# === 2. Load Model dan Fitur ===
+model, fitur_model = joblib.load("model_petir_xgb (2).pkl")
 
-# === LOAD MODEL ===
-@st.cache_resource
-def load_model():
-    return joblib.load("model_petir_xgb (3).pkl")
+# === 3. Streamlit Interface ===
+st.set_page_config(page_title="Prediksi Petir", layout="centered")
+st.title("🌩️ Prediksi Kejadian Petir Harian")
+st.markdown("Silakan masukkan nilai-nilai parameter atmosfer di bawah ini:")
 
-model, fitur_model = load_model()
-
-# === STYLE ===
-st.markdown("""
-    <style>
-        .logo-title-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .logo-title-container img {
-            width: 70px;
-        }
-        .main-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #004080;
-        }
-        .centered {
-            text-align: center;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# === LOGO & JUDUL ===
-st.markdown(
-    """
-    <div class="logo-title-container">
-        <img src="logo_stmkg.png" alt="Logo">
-        <div class="main-title">Prediksi Kejadian Petir Harian</div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-st.markdown('<p class="centered">Masukkan parameter atmosfer di bawah untuk memprediksi potensi petir.</p>', unsafe_allow_html=True)
-
-# === FORM INPUT DI TENGAH ===
-with st.form("form_input", clear_on_submit=False):
+# === 4. Form Input User ===
+with st.form("form_input"):
     col1, col2 = st.columns(2)
     with col1:
         hour = st.selectbox("Jam (UTC)", options=[0, 12])
-        season = st.selectbox("Musim", options=[1, 2, 3, 4], format_func=lambda x: {
-            1: "DJF (Des-Jan-Feb)",
-            2: "MAM (Mar-Apr-Mei)",
-            3: "JJA (Jun-Jul-Agu)",
-            4: "SON (Sep-Okt-Nov)"
-        }[x])
+        season = st.selectbox("Periode Musim (1=DJF, 2=MAM, 3=JJA, 4=SON)", options=[1, 2, 3, 4])
         month = st.slider("Bulan", 1, 12, 1)
         KI = st.number_input("KI Index", value=30.0)
         SWEAT = st.number_input("SWEAT Index", value=200.0)
@@ -69,31 +28,30 @@ with st.form("form_input", clear_on_submit=False):
         SI = st.number_input("Showalter Index", value=1.0)
         PW = st.number_input("Precipitable Water (mm)", value=40.0)
 
-    submitted = st.form_submit_button("🔍 Prediksi Sekarang")
+    submitted = st.form_submit_button("🔍 Prediksi")
 
-# === PREDIKSI ===
+# === 5. Prediksi Probabilitas & Klasifikasi ===
 if submitted:
     cos_month = np.cos(2 * np.pi * month / 12)
-    input_data = pd.DataFrame([{
-        'hour': hour, 'season': season, 'KI': KI, 'SWEAT': SWEAT,
-        'LI': LI, 'CAPE': CAPE, 'TTI': TTI, 'SI': SI,
-        'PW': PW, 'cos_month': cos_month
+
+    # Buat DataFrame input user sesuai urutan fitur saat training
+    X_input = pd.DataFrame([{
+        'hour': hour,
+        'season': season,
+        'KI': KI,
+        'SWEAT': SWEAT,
+        'LI': LI,
+        'CAPE': CAPE,
+        'TTI': TTI,
+        'SI': SI,
+        'PW': PW,
+        'cos_month': cos_month
     }])[fitur_model]
 
-    prob = model.predict_proba(input_data)[0, 1]
-    klasifikasi = "⚡ POTENSI PETIR" if prob >= 0.35 else "✅ NON-PETIR"
+    prob = model.predict_proba(X_input)[0, 1]
+    
+    # ✅ Ubah threshold dari 0.35 ke 0.5
+    klasifikasi = "⚡ Petir" if prob >= 0.5 else "✅ Non-Petir"
 
-    st.subheader("📊 Hasil Prediksi")
-    col1, col2 = st.columns(2)
-    col1.metric("Klasifikasi", klasifikasi)
-    col2.metric("Probabilitas", f"{prob:.2f}")
-    st.progress(prob)
-
-    with st.expander("ℹ️ Tentang Model"):
-        st.markdown("""
-        - Model: **XGBoost Classifier**
-        - Optimasi ketidakseimbangan data: **SMOTE-ENN**
-        - Threshold klasifikasi: **0.35**
-        - Fitur: Indeks atmosfer & musiman
-        """)
-
+    st.metric("Probabilitas Petir", f"{prob:.2f}")
+    st.success(f"Hasil Klasifikasi: {klasifikasi}")
