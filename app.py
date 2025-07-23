@@ -8,7 +8,7 @@ st.set_page_config(page_title="STMKG Lightning Prediction", layout="centered")
 # === LOAD MODEL ===
 @st.cache_resource
 def load_model():
-    return joblib.load("model_petir_xgb.pkl")
+    return joblib.load("model_petir_xgb (3).pkl")
 
 model, fitur_model = load_model()
 
